@@ -67,6 +67,8 @@ const notices = {
   timeout: 'AI не успел ответить. Используется локальный помощник.',
 };
 
+const PARTICIPANT_RULES = '\nОценивай только описание задачи. Не используй личные и чувствительные признаки участников (возраст, пол, национальность, здоровье и подобные сведения) для рейтинга, вопросов или рекомендаций. В поле contact оценивай наличие рабочего канала связи, а не личность контактного лица. Не выбирай команды и не назначай исполнителей.';
+
 export async function runAssistant(kind, input, options = {}) {
   if (!['questions', 'card', 'review'].includes(kind)) throw new Error('Неизвестное действие');
   const task = cleanTask(input);
@@ -95,7 +97,7 @@ export async function runAssistant(kind, input, options = {}) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
           model, store: false, max_output_tokens: 6000, reasoning: { effort: 'low' },
-          instructions: (action === 'questions' ? QUESTION_PROMPT : action === 'card' ? `${CARD_PROMPT}\n\n${REVIEW_PROMPT}` : REVIEW_PROMPT) + languageInstruction + (attempt ? '\nПредыдущий ответ не прошёл проверку структуры или источников. Не меняй слова и числа цитат. Верни все требуемые поля; для отсутствующих сведений используй пустые массивы.' : ''),
+          instructions: (action === 'questions' ? QUESTION_PROMPT : action === 'card' ? `${CARD_PROMPT}\n\n${REVIEW_PROMPT}` : REVIEW_PROMPT) + PARTICIPANT_RULES + languageInstruction + (attempt ? '\nПредыдущий ответ не прошёл проверку структуры или источников. Не меняй слова и числа цитат. Верни все требуемые поля; для отсутствующих сведений используй пустые массивы.' : ''),
           input: JSON.stringify({ ...task, ...card }),
           text: { format: { type: 'json_schema', name: `task_${action}`, strict: true, schema: action === 'questions' ? questionSchema : action === 'card' ? cardSchema : reviewSchema } },
         }),

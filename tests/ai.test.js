@@ -28,6 +28,13 @@ test('Valid provider output is parsed and secrets stay in the server authorizati
   assert.equal(JSON.parse(request.body).text.format.strict,true);
   assert.ok(!JSON.stringify(result).includes('test-server-only'));
 });
+test('AI receives only task fields, not team profiles, participant traits or selection commands',async()=>{
+  let body;
+  await runAssistant('questions',{...task,teamProfile:{age:19,gender:'female',health:'private'},proposals:[{teamId:'winner'}],selectTeam:'winner'},{apiKey:'test',fetchImpl:async(_,config)=>{body=JSON.parse(config.body);return output(validQuestions);}});
+  assert.deepEqual(JSON.parse(body.input),cleanTask(task));
+  assert.match(body.instructions,/Не используй личные и чувствительные признаки/);
+  assert.match(body.instructions,/Не выбирай команды и не назначай исполнителей/);
+});
 test('Malformed, duplicate, refused, and incomplete answers fall back safely',async()=>{
   for(const value of [{questions:[]},{questions:[validQuestions.questions[0],validQuestions.questions[0],validQuestions.questions[2]]}]){
     const result=await runAssistant('questions',task,{apiKey:'test',fetchImpl:async()=>output(value)});

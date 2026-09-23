@@ -1,8 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fields, scoreTask, breakdown, hasContent, currentAssessment, validateAssessment } from '../src/scoring.js';
+import { fields, rules, scoreTask, breakdown, hasContent, currentAssessment, validateAssessment } from '../src/scoring.js';
+import {readiness} from '../src/data.js';
 import { analyze, validateResponse } from '../src/assistant.js';
 import { strongTask, strongReview, weakTask, weakReview } from './fixtures/quality.js';
+
+test('Readiness weights and tier boundaries match the brief',()=>{
+  assert.deepEqual(rules.map(rule=>rule.weight),[20,20,15,15,10,10,10]);
+  for(const [score,label] of [[0,'Требует уточнения'],[39,'Требует уточнения'],[40,'Рабочая'],[69,'Рабочая'],[70,'Готовая'],[89,'Готовая'],[90,'Приоритетная'],[100,'Приоритетная']]) assert.equal(readiness(score),label);
+});
 
 test('Only confirmed fields count; preview never modifies the task', () => {
   const task = { ...strongTask, assessment: validateAssessment(strongReview, strongTask) };

@@ -44,7 +44,7 @@ function dashboard() {
 function editorPage() {
   if (!editor) return empty(tr("Создайте первую задачу"), tr("Начните с короткого описания."), 'create-task', tr("Создать задачу"));
   const { task, step } = editor;
-  if (pendingAI) return `<section class="ai-loading" role="status" aria-live="polite"><span class="ai-spinner"></span><h2>${pendingAI.kind === 'questions' ? tr("Уточняем вашу задачу") : pendingAI.kind === 'review' ? tr("Проверяем содержание") : tr("Собираем и проверяем карточку")}</h2><p>${pendingAI.kind === 'questions' ? tr("Подбираем вопросы по недостающим сведениям.") : tr("Проверяем конкретность ответов и критерии приёмки.")}</p><button class="secondary" data-action="cancel-ai">${tr("Вернуться к редактированию")}</button></section>`;
+  if (pendingAI) return `<section class="ai-loading" role="status" aria-live="polite"><span class="ai-spinner"></span><h2>${pendingAI.publishAfterReview ? tr("Обновляем рейтинг перед публикацией") : pendingAI.kind === 'questions' ? tr("Уточняем вашу задачу") : pendingAI.kind === 'review' ? tr("Проверяем содержание") : tr("Собираем и проверяем карточку")}</h2><p>${pendingAI.kind === 'questions' ? tr("Подбираем вопросы по недостающим сведениям.") : tr("Проверяем конкретность ответов и критерии приёмки.")}</p><button class="secondary" data-action="cancel-ai">${tr("Вернуться к редактированию")}</button></section>`;
   return `<div class="editor-toolbar"><button class="text-button" data-page="business">${icon('back')} ${tr("Мои задачи")}</button><span>${task.published ? tr("Правки не опубликованы") : tr("Черновик")}</span><button class="icon-button" data-delete-task="${task.id || 'current-draft'}" aria-label="${task.published ? tr("Удалить задачу") : tr("Удалить черновик")}">${icon('trash')}</button></div><div class="wizard-steps">${[tr("Описание"), tr("Вопросы"), tr("Публикация")].map((name,i) => `<div class="${step === i+1 ? 'current' : step > i+1 ? 'done' : ''}" ${step === i+1 ? 'aria-current="step"' : ''}><span>${step > i+1 ? icon('check') : i+1}</span>${name}</div>`).join('')}</div><section class="editor-body">${step === 1 ? `<h2>${tr("С чем нужна помощь?")}</h2><form id="description-form"><label>${tr("Название")}<input data-editor-field name="title" value="${esc(task.title)}" maxlength="120" required placeholder="${tr("Например, учёт заявок")}"/></label><label>${tr("Что нужно сделать")}<textarea data-editor-field name="description" required minlength="15" maxlength="5000" rows="5" placeholder="${tr("Опишите проблему и что хотите изменить")}">${esc(task.description)}</textarea></label><div class="field-pair"><label>${tr("Направление")}<select data-editor-field name="category">${categories.slice(1).map(c => `<option value="${esc(c)}" ${task.category === c ? 'selected' : ''}>${tr(c)}</option>`).join('')}</select></label><label>${tr("Срок")} <span class="optional">${tr("необязательно")}</span><input data-editor-field name="weeks" value="${esc(task.weeks)}" maxlength="100" placeholder="${tr("Например, 3 недели")}"/></label></div><div class="form-actions"><button type="button" class="secondary" data-action="save-draft">${tr("Сохранить черновик")}</button><button class="primary">${tr("Уточнить с AI")} ${icon('spark')}</button></div></form>` : step === 2 ? questionsStep() : cardStep()}</section>`;
 }
 function questionsStep() {
@@ -68,7 +68,7 @@ function qualityReview() {
   const task = editor.task;
   const review = currentAssessment(task);
   const issues = review ? fields.filter(f => review.fields[f.key].level < 4) : [];
-  return `<section class="quality-review" aria-live="polite">${review && review.locale !== getLocale() ? `<p>${tr('Пояснения сохранены на языке последней проверки. Для перевода запустите проверку ещё раз.')}</p>` : ''}<div class="quality-heading"><strong>${review ? `${tr("Готовность")} ${scoreTask(task, true)}/100` : tr("Готовность не оценена")}</strong><button class="text-button" type="button" data-action="review-card">${review ? tr("Проверить ещё раз") : tr("Оценить с AI")} ${icon('spark')}</button></div>${review ? issues.length ? `<details class="quality-issues"><summary>${tr("Что уточнить ·")} ${issues.length} ${icon('chevron')}</summary>${issues.map(f => `<button type="button" data-focus-field="${f.key}"><strong>${tr(f.label)}</strong><span>${esc(tr(review.fields[f.key].reason))}</span>${icon('arrow')}</button>`).join('')}</details>` : `<p>${tr("Все критерии проработаны. Подтвердите сведения перед публикацией.")}</p>` : `<p>${task.assessment ? tr("Карточка изменена. Нужна повторная проверка.") : tr("Проверьте содержание, чтобы получить баллы. Без проверки можно опубликовать без рейтинга.")}</p>`}</section>`;
+  return `<section class="quality-review" aria-live="polite">${review && review.locale !== getLocale() ? `<p>${tr('Пояснения сохранены на языке последней проверки. Для перевода запустите проверку ещё раз.')}</p>` : ''}<div class="quality-heading"><strong>${review ? `${tr("Готовность")} ${scoreTask(task, true)}/100` : tr("Готовность не оценена")}</strong><button class="text-button" type="button" data-action="review-card">${review ? tr("Проверить ещё раз") : tr("Оценить с AI")} ${icon('spark')}</button></div>${review ? issues.length ? `<details class="quality-issues"><summary>${tr("Что уточнить ·")} ${issues.length} ${icon('chevron')}</summary>${issues.map(f => `<button type="button" data-focus-field="${f.key}"><strong>${tr(f.label)}</strong><span>${esc(tr(review.fields[f.key].reason))}</span>${icon('arrow')}</button>`).join('')}</details>` : `<p>${tr("Все критерии проработаны. Подтвердите сведения перед публикацией.")}</p>` : `<p>${task.assessment ? tr("Карточка изменена. Рейтинг обновится при публикации.") : tr("Рейтинг будет рассчитан при публикации. Если AI недоступен, задача останется доступной без оценки.")}</p>`}</section>`;
 }
 function scorePanel() {
   const task = editor.task; const review = currentAssessment(task);
@@ -116,12 +116,12 @@ async function advanceQuestion() {
 export function cancelBusinessAI() {
   if (pendingAI) { pendingAI.controller.abort(); pendingAI = null; }
 }
-async function runEditorAI(kind) {
+async function runEditorAI(kind, publishAfterReview = false) {
   if (!editor || pendingAI) return;
   const current = editor;
   let task;
   try { task = cleanTask(current.task); } catch (error) { toast(error.message); return; }
-  const operation = { editor: current, controller: new AbortController(), kind };
+  const operation = { editor: current, controller: new AbortController(), kind, publishAfterReview };
   pendingAI = operation;
   stash(); onNavigate('editor');
   try {
@@ -138,12 +138,25 @@ async function runEditorAI(kind) {
       if (!result.assessment && kind === 'review' && currentAssessment(current.task)) current.cardNotice += tr(" Показана предыдущая оценка этой версии карточки.");
       current.step = 3;
     }
-    current.checked = false; pendingAI = null; stash(); onNavigate('editor');
+    pendingAI = null;
+    // A review changes only the assessment. The user has already confirmed this exact text.
+    if (publishAfterReview) { publishEditor(current, result.notice); return; }
+    current.checked = false; stash(); onNavigate('editor');
   } catch (error) {
     if (!operation.controller.signal.aborted && pendingAI === operation) {
       pendingAI = null; onNavigate('editor'); toast(tr("Не удалось обработать задачу. Ответы сохранены."));
     }
   }
+}
+function publishEditor(current, notice = '') {
+  if (editor !== current || !current.checked) return;
+  const existing = getTask(current.task.id);
+  if (current.task.id && (!existing || existing.deletedAt || existing.ownerId !== BUSINESS_ID)) return;
+  const task = { ...current.task, id: current.task.id || uid(), ownerId: BUSINESS_ID, company: db.business.name, logo: 'q.', handle: 'qadam.edu', tags: [current.task.category], time: 'Только что', published: true, confirmed: true, confirmedAt: new Date().toISOString() };
+  task.score = scoreTask(task);
+  if (existing) Object.assign(existing, task); else db.tasks.push(task);
+  save(); editor = null; stash(); onNavigate('business');
+  toast(currentAssessment(task) ? `${tr("Задача опубликована. Готовность —")} ${task.score}/100.` : [notice, tr("Задача опубликована без рейтинга. Оценку можно получить при редактировании.")].filter(Boolean).join(' '));
 }
 function previewCard() {
   const task = editor.task;
@@ -231,12 +244,10 @@ export async function handleBusinessSubmit(form) {
   } else if (form.id === 'questions-form') { await advanceQuestion(); return true; }
   else {
     if (!data.title || data.description.length < 15 || !form.querySelector('#confirm-task').checked) { toast(tr("Проверьте название, описание и подтвердите сведения")); return true; }
-    const existing = getTask(editor.task.id);
-    if (existing && existing.ownerId !== BUSINESS_ID) return true;
-    const task = { ...editor.task, id: editor.task.id || uid(), ownerId: BUSINESS_ID, company: db.business.name, logo: 'q.', handle: 'qadam.edu', tags: [data.category], time: 'Только что', published: true, confirmed: true, confirmedAt: new Date().toISOString() };
-    task.score = scoreTask(task);
-    if (existing) Object.assign(existing, task); else db.tasks.push(task);
-    save(); editor = null; stash(); onNavigate('business'); toast(currentAssessment(task) ? `${tr("Задача опубликована. Готовность —")} ${task.score}/100.` : tr("Задача опубликована без рейтинга. Оценку можно получить при редактировании.")); return true;
+    editor.checked = true;
+    if (!currentAssessment(editor.task)) await runEditorAI('review', true);
+    else publishEditor(editor);
+    return true;
   }
   stash(); onNavigate('editor'); return true;
 }
