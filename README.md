@@ -1,6 +1,5 @@
 # hack-1cef21cf-chupapi
 Hackathon team repository for Chupapi
-Чупапимунянё
 
 
 ## Alem — задачи бизнеса и студенческие команды
