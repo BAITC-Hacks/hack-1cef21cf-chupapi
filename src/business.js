@@ -3,7 +3,7 @@ import { db, BUSINESS_ID, categories, ownedTasks, incoming, getTask, uid, save, 
 import { fields, breakdown, scoreTask, currentAssessment } from './scoring.js';
 import { analyze, localQuestions } from './assistant.js';
 import { requestAssistant } from './ai-client.js';
-import { cleanTask } from './ai-contract.js';
+import { cleanTask, fallbackCard } from './ai-contract.js';
 import { esc, icon, badge, toast, showDialog, formData, safeUrl, empty } from './ui.js';
 import { readiness } from './data.js';
 
@@ -38,7 +38,7 @@ function dashboard() {
   return `<div class="feed-tabs business-tabs">${[['all', tr("Все")], ['published', tr("В каталоге")], ['draft', tr("Черновики")]].map(([v,n]) => `<button data-business-filter="${v}" class="${taskFilter === v ? 'selected' : ''}">${n}<span>${mine.filter(t => v === 'all' || (v === 'published' ? t.published : !t.published)).length}</span></button>`).join('')}</div>
     ${visible.length ? visible.map(t => {
       const replies = incoming().filter(p => p.taskId === t.id);
-      return `<article class="business-task"><div class="business-task-top"><span class="publication-state">${icon(t.published ? 'globe' : 'edit')}${t.published ? tr("В каталоге") : tr("Черновик")}</span><span class="muted-small">${esc(tr(t.category))}</span><button class="icon-button" data-delete-task="${t.id}" aria-label="${t.published ? tr("Удалить задачу") : tr("Удалить черновик")}">${icon('trash')}</button></div><button class="task-title" data-edit-task="${t.id}"><h2>${esc(t.title || tr("Без названия"))}</h2></button><p class="task-excerpt">${esc(t.description)}</p>${t.published ? `<div class="business-task-score">${badge(t)}</div>` : ''}<div class="business-task-actions">${t.published ? `<button class="secondary" data-edit-task="${t.id}">${icon('edit')}${tr("Редактировать")}</button><button class="primary" data-task-inbox="${t.id}">${tr("Отклики")} <span class="button-count">${replies.length}</span>${icon('arrow')}</button>` : `<span class="muted-small">${tr("Не опубликована")}</span><button class="primary" data-edit-task="${t.id}">${tr("Продолжить")} ${icon('arrow')}</button>`}</div></article>`;
+      return `<article class="business-task"><div class="business-task-top"><span class="publication-state">${icon(t.published ? 'globe' : 'edit')}${t.published ? tr("В каталоге") : tr("Черновик")}</span><span class="muted-small">${t.industry ? `${esc(tr(t.industry))} · ` : ''}${esc(tr(t.category))}</span><button class="icon-button" data-delete-task="${t.id}" aria-label="${t.published ? tr("Удалить задачу") : tr("Удалить черновик")}">${icon('trash')}</button></div><button class="task-title" data-edit-task="${t.id}"><h2>${esc(t.title || tr("Без названия"))}</h2></button><p class="task-excerpt">${esc(t.description)}</p>${t.published ? `<div class="business-task-score">${badge(t)}</div>` : ''}<div class="business-task-actions">${t.published ? `<button class="secondary" data-edit-task="${t.id}">${icon('edit')}${tr("Редактировать")}</button><button class="primary" data-task-inbox="${t.id}">${tr("Отклики")} <span class="button-count">${replies.length}</span>${icon('arrow')}</button>` : `<span class="muted-small">${tr("Не опубликована")}</span><button class="primary" data-edit-task="${t.id}">${tr("Продолжить")} ${icon('arrow')}</button>`}</div></article>`;
     }).join('') : empty(tr("Задач пока нет"), tr("Опишите, с чем нужна помощь."), 'create-task', tr("Создать задачу"))}`;
 }
 function editorPage() {
@@ -52,7 +52,7 @@ function questionsStep() {
   const index = Math.min(editor.questionIndex || 0, questions.length - 1);
   const q = questions[index];
   if (!q) return `<p>${tr("Вернитесь к описанию задачи.")}</p><button class="secondary" data-editor-step="1">${tr("Назад")}</button>`;
-  return `<div class="question-position"><span>${tr("Вопрос")} ${index + 1} ${tr("из")} ${questions.length}</span><span class="demo-label">${editor.questionMode === 'openai' ? tr("AI-помощник") : tr("Локальный режим")}</span></div><div class="question-progress" aria-label="${tr("Прогресс вопросов")}">${questions.map((_,i) => `<span class="${i <= index ? 'filled' : ''}"></span>`).join('')}</div>${editor.questionMode === 'openai' && (editor.questionLocale || 'ru') !== getLocale() ? `<p class="ai-notice">${tr('Вопросы созданы на другом языке.')} <button type="button" class="text-button" data-action="refresh-questions">${tr('Обновить вопросы')}</button></p>` : ''}${editor.questionNotice ? `<p class="ai-notice">${esc(tr(editor.questionNotice))}</p>` : ''}<form id="questions-form"><label class="question-field"><span>${esc(editor.questionMode === 'openai' ? q.question : (localQuestions(editor.task, getLocale(), true).questions.find(item => item.key === q.key)?.question || tr(q.question)))}</span><textarea data-editor-field name="${q.key}" rows="6" maxlength="5000" placeholder="${tr("Ваш ответ")}">${esc(editor.task[q.key])}</textarea></label><div class="form-actions"><button type="button" class="secondary" data-action="previous-question">${icon('back')} ${tr("Назад")}</button><button class="primary">${index === questions.length - 1 ? tr("Собрать карточку") : tr("Далее")} ${icon('arrow')}</button></div><button type="button" class="text-button skip-question" data-action="skip-question">${tr("Не знаю, пропустить")}</button></form>`;
+  return `<div class="question-position"><span>${tr("Вопрос")} ${index + 1} ${tr("из")} ${questions.length}</span><span class="demo-label">${editor.questionMode === 'openai' ? tr("AI-помощник") : tr("Локальный режим")}</span></div><div class="question-progress" aria-label="${tr("Прогресс вопросов")}">${questions.map((_,i) => `<span class="${i <= index ? 'filled' : ''}"></span>`).join('')}</div>${editor.questionMode === 'openai' && (editor.questionLocale || 'ru') !== getLocale() ? `<p class="ai-notice">${tr('Вопросы созданы на другом языке.')} <button type="button" class="text-button" data-action="refresh-questions">${tr('Обновить вопросы')}</button></p>` : ''}${editor.questionNotice ? `<p class="ai-notice">${esc(tr(editor.questionNotice))}</p>` : ''}<form id="questions-form"><p class="form-note">${q.key === 'description' ? tr("Ответ необязателен и дополнит исходное описание.") : tr("Если не знаете ответ, этот вопрос можно пропустить.")}</p><label class="question-field"><span>${esc(editor.questionMode === 'openai' ? q.question : (localQuestions(editor.task, getLocale(), true).questions.find(item => item.key === q.key)?.question || tr(q.question)))}</span><textarea data-editor-field name="${q.key}" rows="6" maxlength="5000" placeholder="${tr("Ваш ответ")}">${esc(editor.questionAnswers?.[q.key] ?? (q.key === 'description' ? '' : editor.task[q.key]))}</textarea></label><div class="form-actions"><button type="button" class="secondary" data-action="previous-question">${icon('back')} ${tr("Назад")}</button><button class="primary">${index === questions.length - 1 ? tr("Собрать карточку") : tr("Далее")} ${icon('arrow')}</button></div><button type="button" class="text-button skip-question" data-action="skip-question">${tr("Не знаю, пропустить")}</button></form>`;
 }
 function cardStep() {
   const task = editor.task;
@@ -68,12 +68,12 @@ function qualityReview() {
   const task = editor.task;
   const review = currentAssessment(task);
   const issues = review ? fields.filter(f => review.fields[f.key].level < 4) : [];
-  return `<section class="quality-review" aria-live="polite">${review && review.locale !== getLocale() ? `<p>${tr('Пояснения сохранены на языке последней проверки. Для перевода запустите проверку ещё раз.')}</p>` : ''}<div class="quality-heading"><strong>${review ? `${tr("Готовность")} ${scoreTask(task, true)}/100` : tr("Готовность не оценена")}</strong><button class="text-button" type="button" data-action="review-card">${review ? tr("Проверить ещё раз") : tr("Оценить с AI")} ${icon('spark')}</button></div>${review ? issues.length ? `<details class="quality-issues"><summary>${tr("Что уточнить ·")} ${issues.length} ${icon('chevron')}</summary>${issues.map(f => `<button type="button" data-focus-field="${f.key}"><strong>${tr(f.label)}</strong><span>${esc(tr(review.fields[f.key].reason))}</span>${icon('arrow')}</button>`).join('')}</details>` : `<p>${tr("Все критерии проработаны. Подтвердите сведения перед публикацией.")}</p>` : `<p>${task.assessment ? tr("Карточка изменена. Рейтинг обновится при публикации.") : tr("Рейтинг будет рассчитан при публикации. Если AI недоступен, задача останется доступной без оценки.")}</p>`}</section>`;
+  return `<section class="quality-review" aria-live="polite">${review?.source === 'demo' ? `<p>${tr("Демонстрационная оценка по рубрике. Для проверки ваших правок запустите AI.")}</p>` : ''}${review && review.locale !== getLocale() ? `<p>${tr('Пояснения сохранены на языке последней проверки. Для перевода запустите проверку ещё раз.')}</p>` : ''}<div class="quality-heading"><strong>${review ? `${tr("Готовность")} ${scoreTask(task, true)}/100` : tr("Готовность не оценена")}</strong><button class="text-button" type="button" data-action="review-card">${review ? tr("Проверить ещё раз") : tr("Оценить с AI")} ${icon('spark')}</button></div>${review ? issues.length ? `<details class="quality-issues"><summary>${tr("Что уточнить ·")} ${issues.length} ${icon('chevron')}</summary>${issues.map(f => `<button type="button" data-focus-field="${f.key}"><strong>${tr(f.label)}</strong><span>${esc(tr(review.fields[f.key].reason))}</span>${icon('arrow')}</button>`).join('')}</details>` : `<p>${tr("Все критерии проработаны. Подтвердите сведения перед публикацией.")}</p>` : `<p>${task.assessment ? tr("Карточка изменена. Рейтинг обновится при публикации.") : tr("Рейтинг будет рассчитан при публикации. Если AI недоступен, задача останется доступной без оценки.")}</p>`}</section>`;
 }
 function scorePanel() {
   const task = editor.task; const review = currentAssessment(task);
   const score = scoreTask(task, true); const rows = breakdown(task, true);
-  return `<section class="score-panel"><h2>${tr("Готовность задачи")}</h2><div class="score-value"><strong>${review ? score : '—'}</strong><span>/100</span></div><div class="score-progress"><span style="width:${score}%"></span></div><h3>${review ? tr(readiness(score)) : tr("Нужна оценка содержания")}</h3>${review ? `<div class="score-breakdown">${rows.map(r => `<div class="${r.complete ? 'complete' : ''}"><span>${icon(r.complete ? 'check' : 'plus')}${tr(r.label)}</span><b>${r.earned}<small>/${r.weight}</small></b></div>`).join('')}</div>` : ''}<p class="score-caption">${review ? tr("AI оценивает конкретность ответов. Сведения подтверждаете вы.") : tr("Заполненные поля сами по себе не дают баллов.")}</p></section>`;
+  return `<section class="score-panel"><h2>${tr("Готовность задачи")}</h2><div class="score-value"><strong>${review ? score : '—'}</strong><span>/100</span></div><div class="score-progress"><span style="width:${score}%"></span></div><h3>${review ? tr(readiness(score)) : tr("Нужна оценка содержания")}</h3>${review ? `<div class="score-breakdown">${rows.map(r => `<div class="${r.complete ? 'complete' : ''}"><span>${icon(r.complete ? 'check' : 'plus')}${tr(r.label)}</span><b>${r.earned}<small>/${r.weight}</small></b></div>`).join('')}</div>` : ''}<p class="score-caption">${review?.source === 'demo' ? tr("Демо-оценка") : review ? tr("AI оценивает конкретность ответов. Сведения подтверждаете вы.") : tr("Заполненные поля сами по себе не дают баллов.")}</p></section>`;
 }
 export function businessAside(page) {
   if (page === 'editor' && editor) {
@@ -106,8 +106,21 @@ function saveDraft() {
   }
   stash(); onNavigate('business'); toast(tr("Черновик сохранён. К нему можно вернуться позже."));
 }
-async function advanceQuestion() {
+function saveQuestionAnswer(current, skip = false) {
+  const q = current.questions[current.questionIndex || 0];
+  if (!q) return;
+  // Keep the original brief separate from optional clarifications, including after reload.
+  current.questionSource ||= structuredClone(current.task);
+  current.questionAnswers ||= {};
+  const source = current.questionSource[q.key] || '';
+  const answer = skip ? '' : (current.questionAnswers[q.key] ?? (q.key === 'description' ? '' : current.task[q.key] || '')).trim();
+  current.questionAnswers[q.key] = answer;
+  current.task[q.key] = !answer ? source : q.key === 'description' && source && answer !== source ? `${source}\n\n${answer}` : answer;
+}
+async function advanceQuestion(skip = false) {
   if (pendingAI) return;
+  saveQuestionAnswer(editor, skip);
+  stash();
   const index = editor.questionIndex || 0;
   if (index < editor.questions.length - 1) editor.questionIndex = index + 1;
   else { await runEditorAI('card'); return; }
@@ -119,8 +132,18 @@ export function cancelBusinessAI() {
 async function runEditorAI(kind, publishAfterReview = false) {
   if (!editor || pendingAI) return;
   const current = editor;
+  if (kind === 'questions' && current.step === 2) saveQuestionAnswer(current);
   let task;
-  try { task = cleanTask(current.task); } catch (error) { toast(error.message); return; }
+  try { task = cleanTask(current.task); } catch (error) {
+    if (kind === 'card') {
+      // Older drafts may already have lost their description. Do not trap them on the last question.
+      Object.assign(current.task, fallbackCard(current.task), {assessment: null});
+      current.step = 3; current.checked = false; current.cardMode = 'local';
+      current.cardNotice = tr('Ответы сохранены в карточке. Проверьте исходное описание и остальные поля перед публикацией.');
+      stash(); onNavigate('editor');
+    } else toast(error.message);
+    return;
+  }
   const operation = { editor: current, controller: new AbortController(), kind, publishAfterReview };
   pendingAI = operation;
   stash(); onNavigate('editor');
@@ -129,6 +152,7 @@ async function runEditorAI(kind, publishAfterReview = false) {
     if (operation.controller.signal.aborted || editor !== current || pendingAI !== operation) return;
     if (kind === 'questions') {
       current.questions = result.questions; current.questionIndex = 0; current.step = 2;
+      current.questionSource = structuredClone(task); current.questionAnswers = {};
       current.questionLocale = result.locale || getLocale(); current.questionMode = result.mode; current.questionNotice = result.notice || '';
     } else {
       if (kind === 'card') Object.assign(current.task, result.card);
@@ -187,7 +211,7 @@ export function handleBusinessClick(button) {
     if ((editor.questionIndex || 0) > 0) editor.questionIndex--; else editor.step = 1;
     stash(); onNavigate('editor'); return true;
   }
-  if (button.dataset.action === 'skip-question' && editor) { advanceQuestion(); return true; }
+  if (button.dataset.action === 'skip-question' && editor) { advanceQuestion(true); return true; }
   if (button.dataset.focusField && editor) {
     const field = document.querySelector(`[data-editor-field][name="${button.dataset.focusField}"]`);
     const group = field?.closest('details'); if (group) group.open = true;
@@ -205,13 +229,18 @@ export function handleBusinessClick(button) {
   if (button.dataset.confirmStage) { if (confirmMilestone(button.dataset.confirmStage)) { onNavigate('inbox'); toast(tr("Этап подтверждён. Команда получила 10 баллов.")); } return true; }
   if (button.dataset.teamDetail) {
     const team = db.teams.find(t => t.id === button.dataset.teamDetail); if (!team) return true;
-    showDialog(`<div class="eyebrow">${tr("СТУДЕНЧЕСКАЯ КОМАНДА")}</div><h2>${esc(team.name)}</h2><p>${esc(team.description)}</p><div class="tags">${esc(team.skills).split(',').map(s => `<span>${s.trim()}</span>`).join('')}</div><p class="muted">${teamPoints(team.id)} ${tr("баллов за подтверждённые результаты")}</p>`); return true;
+    showDialog(`<div class="eyebrow">${tr("СТУДЕНЧЕСКАЯ КОМАНДА")}</div><h2>${esc(team.name)}</h2><p>${esc(team.description)}</p><div class="tags">${esc(team.skills).split(',').map(s => `<span>${s.trim()}</span>`).join('')}</div><div class="detail-sections"><section><h3>${tr("Интересы")}</h3><p>${esc(team.interests || tr("Не заполнено"))}</p></section><section><h3>${tr("Технологии")}</h3><p>${esc(team.technologies || tr("Не заполнено"))}</p></section></div><p class="muted">${teamPoints(team.id)} ${tr("баллов за подтверждённые результаты")}</p>`); return true;
   }
   return false;
 }
 export function handleBusinessInput(target) {
   if (target.id === 'confirm-task' && editor) { editor.checked = target.checked; stash(); return; }
   if (target.hasAttribute('data-editor-field') && editor) {
+    if (editor.step === 2) {
+      editor.questionAnswers ||= {};
+      editor.questionAnswers[target.name] = target.value;
+      editor.checked = false; stash(); return;
+    }
     // A blur-triggered change after input must not replace the button being clicked.
     if (editor.task[target.name] === target.value) return;
     editor.task[target.name] = target.value; editor.checked = false;
@@ -237,15 +266,19 @@ export async function handleBusinessSubmit(form) {
     save(); onNavigate('company'); toast(tr("Профиль компании сохранён")); return true;
   }
   if (!editor || pendingAI) return true;
+  if (form.id === 'questions-form') {
+    editor.questionAnswers = { ...editor.questionAnswers, ...data };
+    await advanceQuestion(); return true;
+  }
   Object.assign(editor.task, data);
   if (form.id === 'description-form') {
     if (!data.title || data.description.length < 15) { toast(tr("Добавьте название и описание задачи")); return true; }
     await runEditorAI('questions'); return true;
-  } else if (form.id === 'questions-form') { await advanceQuestion(); return true; }
-  else {
+  } else {
     if (!data.title || data.description.length < 15 || !form.querySelector('#confirm-task').checked) { toast(tr("Проверьте название, описание и подтвердите сведения")); return true; }
     editor.checked = true;
-    if (!currentAssessment(editor.task)) await runEditorAI('review', true);
+    const review = currentAssessment(editor.task);
+    if (!review || review.source === 'demo') await runEditorAI('review', true);
     else publishEditor(editor);
     return true;
   }

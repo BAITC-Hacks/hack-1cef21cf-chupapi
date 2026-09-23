@@ -33,7 +33,7 @@ const revisionKeys = ['title', ...fields.map(f => f.key), 'category', 'weeks'];
 export const taskRevision = task => JSON.stringify(revisionKeys.map(key => typeof task[key] === 'string' ? task[key].trim() : ''));
 
 // Used on the server and when reading saved reviews. A number alone is never trusted.
-export function validateAssessment(value, task, locale = 'ru') {
+export function validateAssessment(value, task, locale = 'ru', source = 'openai') {
   if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== fields.length) throw new Error('Неполная оценка');
   const reviewed = {};
   for (const { key } of fields) {
@@ -49,13 +49,13 @@ export function validateAssessment(value, task, locale = 'ru') {
     if (key === 'contact' && /example\.(?:com|org|net)|\(демо\)/i.test(text)) { level = 0; reason = tr('Замените демонстрационный контакт на рабочий способ связи.', {}, locale); }
     reviewed[key] = { level, reason, evidence: [...item.evidence] };
   }
-  return { version: assessmentVersion, locale: normalizeLocale(locale), snapshot: taskRevision(task), fields: reviewed };
+  return { version: assessmentVersion, source: source === 'demo' ? 'demo' : 'openai', locale: normalizeLocale(locale), snapshot: taskRevision(task), fields: reviewed };
 }
 
 export function currentAssessment(task) {
   const review = task.assessment;
   if (!review || review.version !== assessmentVersion || review.snapshot !== taskRevision(task)) return null;
-  try { return validateAssessment(review.fields, task, review.locale); } catch { return null; }
+  try { return validateAssessment(review.fields, task, review.locale, review.source); } catch { return null; }
 }
 
 export function breakdown(task, preview = false) {
