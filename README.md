@@ -56,6 +56,21 @@ node scripts/check-openai.mjs
 
 The last command makes one **real, billable API request** using a synthetic coffee-shop brief and prints only the result mode, question count and grounding check. It does not print the key.
 
+## Separate workspace pages
+
+Open `/` to choose a workspace. Business and student sections have independent URLs and navigation:
+
+- `/business`: business dashboard with drafts and proposals awaiting review.
+- `/business/challenges/create`: AI interview and editor.
+- `/business/my-challenges`: saved and published business tasks.
+- `/business/applications`: incoming proposals and manual decisions.
+- `/business/challenges` and `/business/challenges/[id]`: business catalogue and details.
+- `/student`: student dashboard, activity and open challenges.
+- `/student/challenges` and `/student/challenges/[id]`: discovery and proposal submission.
+- `/student/proposals`: the demo student's own proposals and decisions.
+
+The URL determines the workspace, even after reload or when both roles are open in separate tabs. Workspace navigation stays inside its section. The demo role buttons navigate between dashboards. Existing unprefixed routes remain compatible. This separation is UI routing, not production authentication.
+
 ## Two workspaces
 
 | Business                                      | Student                                        |
@@ -270,3 +285,11 @@ The server ignores client-supplied review results. Publication requires a previo
 When OpenAI is unavailable, an offline draft can still be prepared and saved. **Confirmation, publication and proposal submission fail closed** until semantic review succeeds. This supersedes the earlier unrestricted offline-demo behavior. Old browser challenges import as unreviewed drafts; old proposals remain in the browser backup for review and resubmission. Previously published/seeded records are not retroactively certified.
 
 Browser tests use `scripts/test-server.mjs`, a local deterministic provider fixture with a separate SQLite database. They do not use the real key. `node scripts/check-quality.mjs` makes three opt-in billable real-provider checks: unrelated answers, a coherent brief and contradictory constraints. Like any model assessment, semantic review may still make mistakes; it cannot guarantee detection of all misleading claims.
+
+## Russian / Kazakh and Alem interface
+
+The sidebar language selector switches between **???????** and **???????** and saves the preference in the browser. UI messages, forms, validation, readiness guidance and synthetic examples use `lib/translations.json` via `components/locale.jsx`. No runtime translation API is needed for the interface. English source keys remain available for regression tests.
+
+AI requests include the chosen language, so newly generated questions and review explanations use Russian or Kazakh. Original user text and card excerpts are preserved; changing interface language never rewrites saved business data. Existing generated review text keeps the language of its original review.
+
+The monochrome Alem layout is adapted from munatuna's `d3d2ae2` commit on `origin/main`: wordmark, compact side navigation, black action buttons, neutral task cards and borders. `app/alem.css` contains the adapted presentation; this app retains its Next.js, SQLite and real OpenAI architecture.

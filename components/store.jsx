@@ -1,5 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect -- Hydrate browser role and subscribe to server state after SSR. */
 "use client";
+
+import { useLocale } from "@/components/locale";
 import {
   createContext,
   useContext,
@@ -8,13 +10,22 @@ import {
   useRef,
   useCallback,
 } from "react";
-import { toast } from "sonner";
+import { toast } from "./localized-toast";
 import { storeSchema } from "@/lib/schema";
+import { usePathname } from "next/navigation";
+import { routeRole } from "@/lib/workspace-routes";
 const Context = createContext(null);
 export function StoreProvider({ children }) {
-  const [db, setDb] = useState({ version: 1, challenges: [], proposals: [] });
+  const { t, locale } = useLocale();
+  const [db, setDb] = useState({
+    version: 1,
+    challenges: [],
+    proposals: [],
+  });
   const [ready, setReady] = useState(false);
-  const [role, setRoleState] = useState("Business");
+  const [savedRole, setRoleState] = useState("Business");
+  const pathname = usePathname();
+  const role = routeRole(pathname) ?? savedRole;
   const [storageError, setStorageError] = useState("");
   const [saving, setSaving] = useState(false);
   const [lastReview, setLastReview] = useState(null);
@@ -61,6 +72,9 @@ export function StoreProvider({ children }) {
       clearInterval(timer);
     };
   }, [refresh]);
+  useEffect(() => {
+    setLastReview(null);
+  }, [pathname]);
   function setRole(value) {
     setLastReview(null);
     setRoleState(value);
@@ -77,7 +91,11 @@ export function StoreProvider({ children }) {
     try {
       const response = await fetch("/api/store", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-demo-role": role },
+        headers: {
+          "Content-Type": "application/json",
+          "x-demo-role": role,
+          "x-ui-locale": locale,
+        },
         body: JSON.stringify(action),
         signal: AbortSignal.timeout(35000),
       });
@@ -93,7 +111,7 @@ export function StoreProvider({ children }) {
       setStorageError("");
       return true;
     } catch (error) {
-      toast.error(error.message || "Save failed. Please retry.");
+      toast.error(t(error.message || "Save failed. Please retry."));
       return false;
     } finally {
       operation.current = false;
@@ -103,7 +121,10 @@ export function StoreProvider({ children }) {
   }
   async function saveChallenge(challenge) {
     if (role !== "Business") return false;
-    return commit({ action: "saveChallenge", challenge });
+    return commit({
+      action: "saveChallenge",
+      challenge,
+    });
   }
   async function submitProposal(challengeId, proposal) {
     if (role !== "Student") return false;
@@ -116,21 +137,32 @@ export function StoreProvider({ children }) {
   }
   async function decide(id, status) {
     if (role !== "Business") return false;
-    return commit({ action: "decide", id, status });
+    return commit({
+      action: "decide",
+      id,
+      status,
+    });
   }
   async function importLegacy() {
     try {
       const data = storeSchema.parse(
         JSON.parse(localStorage.getItem("challengehub:v1")),
       );
-      if (await commit({ action: "importLegacy", data })) {
+      if (
+        await commit({
+          action: "importLegacy",
+          data,
+        })
+      ) {
         setLegacyAvailable(false);
         toast.success(
-          "Browser challenges imported as drafts for review. Proposals remain in the original browser backup.",
+          t(
+            "Browser challenges imported as drafts for review. Proposals remain in the original browser backup.",
+          ),
         );
       }
     } catch {
-      toast.error("The browser backup could not be read.");
+      toast.error(t("The browser backup could not be read."));
     }
   }
   return (
@@ -152,7 +184,7 @@ export function StoreProvider({ children }) {
         importLegacy,
       }}
     >
-      {children}
+      {t(children)}
     </Context.Provider>
   );
 }

@@ -1,6 +1,8 @@
 /* eslint-disable react-hooks/set-state-in-effect -- Hydrate browser-only localStorage, URL and portal state after SSR. */
 "use client";
-import Link from "next/link";
+
+import { useLocale } from "@/components/locale";
+import Link from "./workspace-link";
 import {
   ArrowDownWideNarrow,
   ArrowUpRight,
@@ -31,6 +33,7 @@ const categories = [
   "Healthcare",
 ];
 export function ChallengePost({ challenge, index = 0 }) {
+  const { t, locale } = useLocale();
   const { db } = useStore();
   const { card } = challenge;
   const score = calculateReadinessScore(card);
@@ -52,36 +55,45 @@ export function ChallengePost({ challenge, index = 0 }) {
   return (
     <article
       className="challenge-post"
-      style={{ animationDelay: index * 40 + "ms" }}
+      style={{
+        animationDelay: index * 40 + "ms",
+      }}
     >
       <div className={"avatar org-avatar " + color}>
         <Icon size={23} />
       </div>
       <div className="post-body">
         <div className="post-byline">
-          <strong>{challenge.owner}</strong>
+          <strong>{t(challenge.owner)}</strong>
           <BadgeCheck size={16} className="verified" fill="currentColor" />
-          <span>· {card.industry || "Open challenge"}</span>
+          <span>· {t(card.industry || "Open challenge")}</span>
           <span className="post-date">
-            {new Date(challenge.createdAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            })}
+            {t(
+              new Date(challenge.createdAt).toLocaleDateString(
+                locale === "kk" ? "kk-KZ" : locale === "ru" ? "ru-RU" : "en-US",
+                {
+                  month: "2-digit",
+                  day: "numeric",
+                },
+              ),
+            )}
           </span>
         </div>
         <Link href={"/challenges/" + challenge.id} className="post-title">
-          {card.title || "Untitled challenge"}
+          {t(card.title || "Untitled challenge")}
           <ArrowUpRight size={19} />
         </Link>
         <p className="post-description">
-          {card.problem ||
-            card.context ||
-            "Help a business turn an early idea into a real project."}
+          {t(
+            card.problem ||
+              card.context ||
+              "Help a business turn an early idea into a real project.",
+          )}
         </p>
         <div className="tags">
-          {(card.skills?.split(",").slice(0, 3) || ["Collaboration"]).map(
-            (s) => (
-              <span key={s}>#{s.trim().replaceAll(" ", "")}</span>
+          {t(
+            (card.skills?.split(",").slice(0, 3) || ["Collaboration"]).map(
+              (s) => <span key={s}>#{s.trim().replaceAll(" ", "")}</span>,
             ),
           )}
         </div>
@@ -91,11 +103,13 @@ export function ChallengePost({ challenge, index = 0 }) {
         >
           <div>
             <span className="tiny-label">
-              <Zap size={12} /> REAL PROBLEM. REAL POSSIBILITY.
+              <Zap size={12} />
+              {t("REAL PROBLEM. REAL POSSIBILITY.")}
             </span>
-            <h3>{card.title || "An idea worth exploring"}</h3>
+            <h3>{t(card.title || "An idea worth exploring")}</h3>
             <span className="preview-link">
-              Make your skills matter <ArrowUpRight size={15} />
+              {t("Make your skills matter")}
+              <ArrowUpRight size={15} />
             </span>
           </div>
           <div className="preview-art">
@@ -107,19 +121,20 @@ export function ChallengePost({ challenge, index = 0 }) {
         <div className="post-actions">
           <span>
             <Users size={17} />
-            {count} {count === 1 ? "team" : "teams"} applied
+            {count} {t("teams applied")}
           </span>
           <span className="post-score">
             <BarChart3 size={17} />
-            <b>{score.total}</b>
+            <b>{t(score.total)}</b>
             <span>/ 100</span>
           </span>
           <Badge score={score.total} />
           <Link
             href={"/challenges/" + challenge.id}
-            aria-label={"View " + card.title}
+            aria-label={t("View challenge") + ": " + card.title}
           >
-            View challenge <ArrowUpRight size={15} />
+            {t("View challenge")}
+            <ArrowUpRight size={15} />
           </Link>
         </div>
       </div>
@@ -127,6 +142,7 @@ export function ChallengePost({ challenge, index = 0 }) {
   );
 }
 export function Feed({ home = false }) {
+  const { t } = useLocale();
   const { db, ready } = useStore();
   const [category, setCategory] = useState("All");
   const [level, setLevel] = useState("All");
@@ -161,101 +177,112 @@ export function Feed({ home = false }) {
   return (
     <>
       <PageHeader
-        title={home ? "Home" : "Explore Challenges"}
-        subtitle={
+        title={t(home ? "Home" : "Explore Challenges")}
+        subtitle={t(
           home
             ? "Where ideas meet impact."
-            : "Find real business problems and build solutions that matter."
-        }
+            : "Find real business problems and build solutions that matter.",
+        )}
         action={
           <span className="live-label">
-            <span className="online-dot" /> AI SANA 2026
+            <span className="online-dot" />
+            {t("AI SANA 2026")}
           </span>
         }
       />
-      {home && <HomeHero />}
+      {t(home && <HomeHero />)}
       <div className="feed-heading">
         <h2>
-          {home ? "Your next opportunity" : "The challenge feed"}{" "}
-          <span>{published.length}</span>
+          {t(home ? "Your next opportunity" : "The challenge feed")}
+          {t(" ")}
+          <span>{t(published.length)}</span>
         </h2>
         <span>
-          <Globe2 size={14} /> Open to all builders
+          <Globe2 size={14} />
+          {t("Open to all builders")}
         </span>
       </div>
       <div className="category-tabs">
-        {categories.map((c) => (
-          <button
-            key={c}
-            className={category === c ? "selected" : ""}
-            onClick={() => setCategory(c)}
-          >
-            {c}
-          </button>
-        ))}
+        {t(
+          categories.map((c) => (
+            <button
+              key={c}
+              className={category === c ? "selected" : ""}
+              onClick={() => setCategory(c)}
+            >
+              {c}
+            </button>
+          )),
+        )}
       </div>
       <div className="filter-bar">
         <label>
           <Search size={16} />
           <input
-            aria-label="Filter challenges"
+            aria-label={t("Filter challenges")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Find your next challenge"
+            placeholder={t("Find your next challenge")}
           />
         </label>
         <label className="select-label">
-          <span className="sr-only">Readiness</span>
+          <span className="sr-only">{t("Readiness")}</span>
           <select
-            aria-label="Readiness"
+            aria-label={t("Readiness")}
             value={level}
             onChange={(e) => setLevel(e.target.value)}
           >
-            {["All", "Priority", "Ready", "Workable", "Draft"].map((l) => (
-              <option key={l} value={l}>
-                {l === "All" ? "All readiness" : l}
-              </option>
-            ))}
+            {t(
+              ["All", "Priority", "Ready", "Workable", "Draft"].map((l) => (
+                <option key={l} value={l}>
+                  {l === "All" ? "All readiness" : l}
+                </option>
+              )),
+            )}
           </select>
         </label>
         <label className="select-label">
           <ArrowDownWideNarrow size={14} />
           <select
-            aria-label="Sort challenges"
+            aria-label={t("Sort challenges")}
             value={sort}
             onChange={(e) => setSort(e.target.value)}
           >
-            <option>Highest Readiness</option>
-            <option>Newest</option>
+            <option value="Highest Readiness">{t("Highest Readiness")}</option>
+            <option value="Newest">{t("Newest")}</option>
           </select>
         </label>
       </div>
-      {!ready ? (
-        <Loading />
-      ) : filtered.length ? (
-        filtered.map((c, i) => (
-          <ChallengePost key={c.id} challenge={c} index={i} />
-        ))
-      ) : (
-        <div className="empty-state">
-          <Search size={30} />
-          <h3>No challenges found</h3>
-          <p>Try a different category or search term.</p>
-          <button
-            className="button outline"
-            onClick={() => {
-              setQuery("");
-              setLevel("All");
-              setCategory("All");
-            }}
-          >
-            Clear filters
-          </button>
-        </div>
+      {t(
+        !ready ? (
+          <Loading />
+        ) : filtered.length ? (
+          filtered.map((c, i) => (
+            <ChallengePost key={c.id} challenge={c} index={i} />
+          ))
+        ) : (
+          <div className="empty-state">
+            <Search size={30} />
+            <h3>No challenges found</h3>
+            <p>Try a different category or search term.</p>
+            <button
+              className="button outline"
+              onClick={() => {
+                setQuery("");
+                setLevel("All");
+                setCategory("All");
+              }}
+            >
+              Clear filters
+            </button>
+          </div>
+        ),
       )}
       <div className="feed-end">
         <MessageCircle size={18} />
-        <span>Every great collaboration starts with a conversation.</span>
+        <span>
+          {t("Every great collaboration starts with a conversation.")}
+        </span>
         <Clock3 size={15} />
       </div>
     </>

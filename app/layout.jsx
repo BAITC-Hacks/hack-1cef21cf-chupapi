@@ -1,4 +1,6 @@
 import "./globals.css";
+import "./alem.css";
+import { LocaleProvider } from "@/components/locale";
 import { StoreProvider } from "@/components/store";
 import { Shell } from "@/components/shell";
 import { Toaster } from "sonner";
@@ -8,12 +10,14 @@ export const metadata = {
 };
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="ru" suppressHydrationWarning>
       <body>
-        <StoreProvider>
-          <Shell>{children}</Shell>
-          <Toaster richColors position="bottom-right" closeButton />
-        </StoreProvider>
+        <LocaleProvider>
+          <StoreProvider>
+            <Shell>{children}</Shell>
+            <Toaster richColors position="bottom-right" closeButton />
+          </StoreProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

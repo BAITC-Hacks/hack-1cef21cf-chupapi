@@ -1,9 +1,14 @@
 import { test, expect } from "@playwright/test";
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() =>
+    localStorage.setItem("challengehub:locale", "en"),
+  );
+});
 test("three answers to a published challenge; a second browser submits; business manually accepts", async ({
   page,
   browser,
 }) => {
-  await page.goto("/challenges/create");
+  await page.goto("/business/challenges/create");
   await page
     .getByRole("button", { name: "Analyze with AI", exact: true })
     .click();
@@ -69,12 +74,14 @@ test("three answers to a published challenge; a second browser submits; business
   ).toBeVisible();
   const url = page.url();
   const context = await browser.newContext();
+  await context.addInitScript(() =>
+    localStorage.setItem("challengehub:locale", "en"),
+  );
   const student = await context.newPage();
-  await student.goto(url);
+  await student.goto(url.replace("/business/", "/student/"));
   await expect(
     student.getByRole("heading", { name: title + " reviewed", exact: true }),
   ).toBeVisible();
-  await student.getByRole("button", { name: "Student", exact: true }).click();
   await expect(
     student
       .locator("nav")
@@ -102,7 +109,7 @@ test("three answers to a published challenge; a second browser submits; business
   await expect(
     student.getByText("Proposal submitted successfully."),
   ).toBeVisible();
-  await page.goto("/applications");
+  await page.goto("/business/applications");
   const proposal = page.locator(".application-card").filter({
     has: page.getByRole("heading", {
       name: "Cross Browser Team",
@@ -119,7 +126,7 @@ test("three answers to a published challenge; a second browser submits; business
   ).toBeVisible();
   await proposal.getByRole("button", { name: "Accept", exact: true }).click();
   await expect(proposal.locator(".proposal-status")).toHaveText("Accepted");
-  await student.goto("http://127.0.0.1:3100/applications");
+  await student.goto("http://127.0.0.1:3100/student/proposals");
   await expect(
     student.getByRole("heading", { name: "My Proposals", exact: true }),
   ).toBeVisible();
@@ -147,7 +154,7 @@ test("three answers to a published challenge; a second browser submits; business
 test("demo answers, saved drafts, filters, mobile and separate student dashboard", async ({
   page,
 }) => {
-  await page.goto("/challenges/create?demo=1");
+  await page.goto("/business/challenges/create?demo=1");
   await expect(page.getByLabel("What would you like to solve?")).toHaveValue(
     "We want AI to reduce queues in our coffee shops.",
   );
@@ -194,11 +201,13 @@ test("demo answers, saved drafts, filters, mobile and separate student dashboard
     .click();
   await page.getByLabel("Filter challenges", { exact: true }).fill("Waste");
   await expect(page.locator(".challenge-post")).toHaveCount(1);
-  await page.goto("/");
-  await expect(page.locator(".challenge-post").first()).toBeVisible();
+  await page.goto("/business");
+  await expect(
+    page.getByRole("heading", { name: "Business Dashboard", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Student", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /Your skills/ }),
+    page.getByRole("heading", { name: "Student Dashboard", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: "test-results/student-sqlite.png",
@@ -234,7 +243,7 @@ test("API rejects invalid data and wrong role; malformed AI response still gives
       body: '{"analysis":{"invalid":true}}',
     }),
   );
-  await page.goto("/challenges/create");
+  await page.goto("/business/challenges/create");
   await page
     .getByLabel("What would you like to solve?")
     .fill("We want AI to reduce queues in our coffee shops.");
@@ -247,7 +256,7 @@ test("API rejects invalid data and wrong role; malformed AI response still gives
 test("failed database write does not confirm a card or show success", async ({
   page,
 }) => {
-  await page.goto("/challenges/create?demo=1");
+  await page.goto("/business/challenges/create?demo=1");
   await expect(page.getByLabel("What would you like to solve?")).toHaveValue(
     "We want AI to reduce queues in our coffee shops.",
   );
@@ -287,7 +296,7 @@ test("gibberish, irrelevant answers and manual edits cannot bypass AI review", a
   page,
   request,
 }) => {
-  await page.goto("/challenges/create");
+  await page.goto("/business/challenges/create");
   await page
     .getByLabel("What would you like to solve?")
     .fill("asdfgh qwerty zxcvbn");

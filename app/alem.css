@@ -1,0 +1,356 @@
+﻿/* Adapted from munatuna's Alem UI, commit d3d2ae2. Retains our live SQLite/AI workflows. */
+:root {
+  --ink: #111;
+  --muted: #626262;
+  --line: #e5e5e5;
+  --blue: #111;
+}
+body {
+  color: #111;
+  background: #fff;
+}
+.app-shell {
+  max-width: 1320px;
+  padding: 0 24px;
+  grid-template-columns: 220px minmax(0, 1fr) 280px;
+  gap: 26px;
+}
+.left-sidebar {
+  padding: 28px 0 22px;
+}
+.main-column {
+  border-left: 1px solid #e5e5e5;
+  border-right: 1px solid #e5e5e5;
+  min-width: 0;
+}
+.right-sidebar {
+  padding: 26px 0 20px;
+}
+.alem-logo {
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -3px;
+  padding: 0 12px;
+  line-height: 1;
+}
+.alem-logo span {
+  color: #111;
+}
+.workspace-label {
+  font-size: 10px;
+  letter-spacing: 0.7px;
+  color: #626262;
+  margin: 18px 12px 4px;
+}
+.left-sidebar nav {
+  gap: 6px;
+  margin-top: 16px;
+}
+.nav-link {
+  border-radius: 8px;
+  font-size: 15px;
+  padding: 14px 12px;
+  gap: 12px;
+}
+.nav-link.active,
+.student-workspace .nav-link.active {
+  background: #ededed;
+  color: #111;
+}
+.nav-link:hover {
+  background: #f4f4f4;
+}
+.nav-link svg {
+  width: 20px;
+  height: 20px;
+}
+.button,
+.button.primary,
+.button.outline,
+.create-nav {
+  border-radius: 7px;
+  font-size: 13px;
+  min-height: 40px;
+  padding: 11px 16px;
+}
+.button.primary,
+.student-workspace .button.primary,
+.role-switch button.selected,
+.nav-count {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+  box-shadow: none;
+}
+.button.primary:hover {
+  background: #333;
+}
+.button.outline {
+  color: #111;
+  background: #fff;
+  border: 1px solid #d4d4d4;
+}
+.button.outline:hover {
+  background: #f4f4f4;
+}
+.sidebar-note,
+.blue-card,
+.teams-card {
+  display: none;
+}
+.page-header {
+  padding: 20px 24px;
+  min-height: 83px;
+  background: #fff;
+}
+.page-header h1 {
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.7px;
+}
+.page-header p {
+  font-size: 12px;
+}
+.live-label {
+  display: none;
+}
+.rail-card,
+.role-box {
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  box-shadow: none;
+  background: #fff;
+}
+.role-switch {
+  background: #f4f4f4;
+  border-radius: 7px;
+}
+.role-switch button {
+  border-radius: 5px;
+}
+.search-box {
+  background: #f5f5f5;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+}
+.search-box input {
+  min-width: 0;
+}
+.challenge-post {
+  padding: 24px;
+}
+.post-title {
+  color: #111;
+}
+.post-title h2 {
+  font-size: 19px;
+  letter-spacing: -0.5px;
+}
+.avatar,
+.avatar.navy,
+.avatar.blue,
+.avatar.green,
+.avatar.orange,
+.avatar.purple {
+  background: #eee;
+  color: #111;
+}
+.badge,
+.badge.priority,
+.badge.ready,
+.badge.workable,
+.badge.draft {
+  color: #111;
+  background: #f3f3f3;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+.badge.priority {
+  border-color: #111;
+}
+.badge > span,
+.status-dot,
+.online-dot,
+.mini-track span {
+  background: #555;
+}
+.category-tabs button.selected::after,
+.feed-tabs button.selected::after {
+  background: #111;
+}
+.category-tabs button.selected,
+.text-link,
+.eyebrow,
+.score-gain {
+  color: #111;
+}
+.tags span,
+.tag {
+  background: #f1f1f1;
+  color: #333;
+  border-radius: 5px;
+}
+.score-ring {
+  background: conic-gradient(#111 calc(var(--score) * 1%), #eee 0);
+}
+.doctor {
+  background: #fafafa;
+  border-color: #e5e5e5;
+}
+.workspace-actions {
+  padding: 16px 24px;
+  gap: 10px;
+}
+.workspace-action {
+  border-radius: 8px;
+  padding: 14px;
+}
+.workspace-action strong {
+  font-size: 14px;
+}
+.workspace-action span {
+  font-size: 12px;
+}
+.workspace-entry-card {
+  border-radius: 10px;
+}
+.workspace-entry-card:hover,
+.student-entry:hover {
+  background: #f5f5f5;
+  border-color: #111;
+}
+.workspace-entry-card strong {
+  color: #111;
+}
+.language-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 20px 12px 0;
+}
+.language-picker select {
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #111 !important;
+  box-shadow: 0 0 0 2px #1111;
+}
+a:focus-visible,
+button:focus-visible {
+  outline-color: #111;
+}
+@media (max-width: 1100px) {
+  .app-shell {
+    grid-template-columns: 190px minmax(0, 1fr);
+    max-width: 1000px;
+    gap: 18px;
+  }
+  .right-sidebar {
+    grid-column: 2;
+    display: block;
+  }
+  .left-sidebar {
+    grid-row: 1 / span 2;
+  }
+}
+@media (max-width: 700px) {
+  .app-shell {
+    padding: 0;
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 0;
+  }
+  .left-sidebar {
+    padding: 20px 6px;
+  }
+  .alem-logo {
+    font-size: 25px;
+    padding: 0 3px;
+  }
+  .nav-link {
+    padding: 14px;
+  }
+  .nav-link span,
+  .workspace-label {
+    display: none;
+  }
+  .language-picker {
+    padding: 16px 0 0;
+    flex-direction: column;
+    font-size: 10px;
+    gap: 4px;
+  }
+  .language-picker select {
+    font-size: 10px;
+    width: 65px;
+    padding: 5px 0;
+  }
+  .page-header,
+  .challenge-post {
+    padding: 18px 14px;
+  }
+  .workspace-actions {
+    padding: 14px;
+    grid-template-columns: 1fr;
+  }
+  .right-sidebar {
+    padding: 14px;
+  }
+  .create-nav {
+    min-width: 0;
+    padding: 10px;
+  }
+}
+
+.challenge-preview {
+  display: none;
+}
+.verified {
+  color: #555;
+}
+.left-sidebar .role-box {
+  margin: 18px 0 0;
+  padding: 8px;
+  border: 0;
+}
+.left-sidebar .role-box .row-between {
+  display: none;
+}
+.left-sidebar .role-switch {
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .left-sidebar .role-box {
+    padding: 0;
+  }
+  .left-sidebar .role-switch {
+    display: flex;
+    flex-direction: column;
+  }
+  .left-sidebar .role-switch button {
+    font-size: 9px;
+    padding: 7px 1px;
+    gap: 3px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+.challenge-post {
+  animation: none;
+  opacity: 1;
+}
+.post-description,
+.post-byline,
+.post-actions,
+.post-date,
+.page-header p,
+.filter-bar {
+  color: #525252;
+}

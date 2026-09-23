@@ -1,5 +1,7 @@
 "use client";
-import Link from "next/link";
+
+import { useLocale } from "@/components/locale";
+import Link from "./workspace-link";
 import {
   ArrowUpRight,
   ChevronRight,
@@ -8,6 +10,7 @@ import {
 } from "lucide-react";
 import { useStore } from "./store";
 export function HomeHero() {
+  const { t } = useLocale();
   const { role, db } = useStore();
   const student = role === "Student";
   const mine = db.proposals.filter(
@@ -40,39 +43,45 @@ export function HomeHero() {
         <div className="hero-noise" />
         <span className="hero-label">
           <span />
-          {student
-            ? "STUDENT WORKSPACE · YOUR NEXT CHAPTER"
-            : "BUSINESS WORKSPACE · IDEAS MEET IMPACT"}
+          {t(
+            student
+              ? "STUDENT WORKSPACE · YOUR NEXT CHAPTER"
+              : "BUSINESS WORKSPACE · IDEAS MEET IMPACT",
+          )}
         </span>
         <h2>
-          {student ? (
-            <>
-              Your skills.
-              <br />
-              Real challenges.
-              <br />
-              <span>Meaningful experience.</span>
-            </>
-          ) : (
-            <>
-              Real problems.
-              <br />
-              Fresh perspectives.
-              <br />
-              <span>Extraordinary impact.</span>
-            </>
+          {t(
+            student ? (
+              <>
+                Your skills.
+                <br />
+                Real challenges.
+                <br />
+                <span>Meaningful experience.</span>
+              </>
+            ) : (
+              <>
+                Real problems.
+                <br />
+                Fresh perspectives.
+                <br />
+                <span>Extraordinary impact.</span>
+              </>
+            ),
           )}
         </h2>
         <p>
-          {student ? (
-            "Build something that matters. Discover real business challenges, pitch your approach, and turn your skills into hands-on experience."
-          ) : (
-            <>
-              Turn business problems into real student projects.
-              <br />
-              AI helps companies structure challenges, measure their readiness,
-              and connect with student teams.
-            </>
+          {t(
+            student ? (
+              "Build something that matters. Discover real business challenges, pitch your approach, and turn your skills into hands-on experience."
+            ) : (
+              <>
+                Turn business problems into real student projects.
+                <br />
+                AI helps companies structure challenges, measure their
+                readiness, and connect with student teams.
+              </>
+            ),
           )}
         </p>
         <div className="hero-buttons">
@@ -80,27 +89,29 @@ export function HomeHero() {
             href={student ? "/challenges" : "/challenges/create"}
             className="button white"
           >
-            {student ? "Find a Challenge" : "Create Challenge"}
+            {t(student ? "Find a Challenge" : "Create Challenge")}
             <ArrowUpRight size={17} />
           </Link>
           <Link
             href={student ? "/applications" : "/challenges"}
             className="hero-secondary"
           >
-            {student ? "My Proposals" : "Explore Challenges"}
+            {t(student ? "My Proposals" : "Explore Challenges")}
             <ChevronRight size={16} />
           </Link>
         </div>
         <div className="hero-bottom">
           <div className="mini-avatars">
-            <span>DM</span>
-            <span>AK</span>
-            <span>NS</span>
+            <span>{t("DM")}</span>
+            <span>{t("AK")}</span>
+            <span>{t("NS")}</span>
           </div>
           <span>
-            {student
-              ? "Learn by building. Grow by collaborating."
-              : "Built together. Better together."}
+            {t(
+              student
+                ? "Learn by building. Grow by collaborating."
+                : "Built together. Better together.",
+            )}
           </span>
           <Sparkles size={18} />
         </div>
@@ -108,42 +119,50 @@ export function HomeHero() {
         <div className="hero-orbit two" />
       </section>
       <div className="stats-row">
-        {stats.map(([n, l]) => (
-          <div key={l}>
-            <strong>
-              {n}
-              {l === "Avg. readiness" && <small>/100</small>}
-            </strong>
-            <span>{l}</span>
-          </div>
-        ))}
+        {t(
+          stats.map(([n, l]) => (
+            <div key={l}>
+              <strong>
+                {n}
+                {l === "Avg. readiness" && <small>/100</small>}
+              </strong>
+              <span>{l}</span>
+            </div>
+          )),
+        )}
       </div>
       <div className="demo-caption">
-        {student
-          ? "Your activity in this demo workspace"
-          : "Hackathon community · illustrative demo statistics"}
+        {t(
+          student
+            ? "Your activity in this demo workspace"
+            : "Hackathon community · illustrative demo statistics",
+        )}
       </div>
       <div className="composer">
         <div className="avatar navy">
-          {student ? <GraduationCap size={21} /> : <Sparkles size={21} />}
+          {t(student ? <GraduationCap size={21} /> : <Sparkles size={21} />)}
         </div>
         <div>
           <Link href={student ? "/applications" : "/challenges/create"}>
-            {student
-              ? "Your next project starts with a proposal."
-              : "What challenge is on your mind?"}
+            {t(
+              student
+                ? "Your next project starts with a proposal."
+                : "What challenge is on your mind?",
+            )}
           </Link>
           <span>
-            {student
-              ? "Track your applications and business decisions."
-              : "A rough idea is a great place to start."}
+            {t(
+              student
+                ? "Track your applications and business decisions."
+                : "A rough idea is a great place to start.",
+            )}
           </span>
         </div>
         <Link
           href={student ? "/applications" : "/challenges/create"}
           className="button primary small"
         >
-          {student ? "My proposals" : "Create"}
+          {t(student ? "My proposals" : "Create")}
           <ArrowUpRight size={14} />
         </Link>
       </div>

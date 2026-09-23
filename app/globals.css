@@ -2623,3 +2623,19 @@ h4 {
   line-height: 1.6;
   color: #8193a0;
 }
+
+/* Dedicated workspace entry and dashboard actions */
+.workspace-entry { padding: 36px 28px; }
+.workspace-entry h2 { font-size: 32px; margin: 16px 0 8px; letter-spacing: -1px; }
+.workspace-entry > p { color: #64748b; margin-bottom: 28px; }
+.workspace-entry-card { display: block; border: 1px solid #e2e8f0; border-radius: 20px; padding: 26px; margin: 18px 0; transition: background .2s, border-color .2s; }
+.workspace-entry-card:hover { background: #f0f9ff; border-color: #1d9bf0; }
+.workspace-entry-card h3 { font-size: 24px; margin: 16px 0 10px; }
+.workspace-entry-card p { color: #64748b; line-height: 1.6; }
+.workspace-entry-card strong { display: flex; align-items: center; gap: 8px; color: #168cda; margin-top: 20px; }
+.student-entry:hover { background: #f0fdfa; border-color: #14b8a6; }
+.workspace-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; padding: 20px; border-bottom: 1px solid #eff3f4; }
+.workspace-action { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; }
+.workspace-action:hover { background: #f8fafc; }
+.workspace-action span { color: #64748b; font-size: 13px; }
+@media (max-width: 600px) { .workspace-actions { grid-template-columns: 1fr; } .workspace-entry { padding: 24px 16px; } }

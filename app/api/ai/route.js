@@ -4,6 +4,7 @@ import { answerKeys } from "@/lib/schema";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const inputSchema = z.object({
+  locale: z.enum(["ru", "kk", "en"]).default("ru"),
   description: z.string().trim().min(1).max(6000),
   answers: z
     .partialRecord(z.enum(answerKeys), z.string().max(6000))
@@ -31,7 +32,9 @@ export async function POST(request) {
         { status: 400 },
       );
     return Response.json(
-      await analyzeWithProvider(input.data.description, input.data.answers),
+      await analyzeWithProvider(input.data.description, input.data.answers, {
+        locale: input.data.locale,
+      }),
     );
   } catch {
     return Response.json({ error: "Invalid request JSON." }, { status: 400 });

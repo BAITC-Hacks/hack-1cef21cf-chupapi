@@ -56,14 +56,22 @@ export async function POST(request) {
         { status: 403 },
       );
     const db = getDatabase();
+    const reviewOptions = {
+      locale: ["ru", "kk", "en"].includes(request.headers.get("x-ui-locale"))
+        ? request.headers.get("x-ui-locale")
+        : "ru",
+    };
     if (input.action === "saveChallenge") {
       const challenge = { ...input.challenge };
       delete challenge.contentReview;
       if (challenge.status === "confirmed") {
-        const review = await reviewContent({
-          description: challenge.description,
-          card: challenge.card,
-        });
+        const review = await reviewContent(
+          {
+            description: challenge.description,
+            card: challenge.card,
+          },
+          reviewOptions,
+        );
         if (review.status !== "approved")
           return Response.json(
             { error: review.summary, review },
@@ -84,11 +92,14 @@ export async function POST(request) {
           { error: "Challenge not found." },
           { status: 404 },
         );
-      const review = await reviewContent({
-        description: challenge.card.problem || challenge.description,
-        card: challenge.card,
-        proposal: input.proposal,
-      });
+      const review = await reviewContent(
+        {
+          description: challenge.card.problem || challenge.description,
+          card: challenge.card,
+          proposal: input.proposal,
+        },
+        reviewOptions,
+      );
       if (review.status !== "approved")
         return Response.json(
           { error: review.summary, review },

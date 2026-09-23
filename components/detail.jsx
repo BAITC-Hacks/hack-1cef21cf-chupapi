@@ -1,5 +1,7 @@
 "use client";
-import Link from "next/link";
+
+import { useLocale } from "@/components/locale";
+import Link from "./workspace-link";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -12,7 +14,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "./localized-toast";
 import { fieldLabels, fields, proposalInputSchema } from "@/lib/schema";
 import { useStore } from "./store";
 import { PageHeader, SidePanel, Loading } from "./shell";
@@ -21,6 +23,7 @@ import { calculateReadinessScore } from "@/lib/readiness-score";
 import { Editor } from "./editor";
 import { QualityReview } from "./quality-review";
 export function ProposalForm({ challenge, onClose }) {
+  const { t, locale } = useLocale();
   const { submitProposal, saving, lastReview, clearReview } = useStore();
   const [form, setForm] = useState({
     teamName: "",
@@ -50,75 +53,89 @@ export function ProposalForm({ challenge, onClose }) {
       return;
     }
     if (await submitProposal(challenge.id, result.data)) {
-      toast.success("Proposal submitted successfully.");
+      toast.success(t("Proposal submitted successfully."));
       onClose();
     }
   }
   return (
-    <section className="proposal-form" aria-label="Submit proposal">
+    <section className="proposal-form" aria-label={t("Submit proposal")}>
       <div className="row-between">
         <div>
-          <span className="eyebrow">YOUR TEAM. YOUR APPROACH.</span>
-          <h2>Submit Proposal</h2>
+          <span className="eyebrow">{t("YOUR TEAM. YOUR APPROACH.")}</span>
+          <h2>{t("Submit Proposal")}</h2>
         </div>
         <button
           className="icon-button"
           onClick={onClose}
-          aria-label="Close proposal"
+          aria-label={t("Close proposal")}
         >
           <X size={21} />
         </button>
       </div>
       <p className="lead">
-        Tell the business how you would tackle this challenge.
+        {t("Tell the business how you would tackle this challenge.")}
       </p>
       <QualityReview review={lastReview} />
       <form onSubmit={submit} noValidate>
-        {Object.keys(labels).map((f) => (
-          <label className="edit-field" key={f}>
-            <span>
-              {labels[f]} {f === "link" && <em>Optional</em>}
-            </span>
-            {f === "idea" || f === "plan" ? (
-              <textarea
-                rows={4}
-                value={form[f]}
-                onChange={(e) => setForm({ ...form, [f]: e.target.value })}
-                maxLength={f === "plan" ? 5000 : 3000}
-              />
-            ) : (
-              <input
-                value={form[f]}
-                onChange={(e) => setForm({ ...form, [f]: e.target.value })}
-                placeholder={
-                  f === "link"
-                    ? "https://github.com/your-team/project"
-                    : f === "duration"
-                      ? "e.g. 2 weeks"
-                      : ""
-                }
-                maxLength={f === "link" ? 2000 : 100}
-              />
-            )}{" "}
-            {errors[f] && (
-              <small className="form-error" role="alert">
-                {errors[f]}
-              </small>
-            )}
-          </label>
-        ))}
+        {t(
+          Object.keys(labels).map((f) => (
+            <label className="edit-field" key={f}>
+              <span>
+                {labels[f]} {f === "link" && <em>Optional</em>}
+              </span>
+              {f === "idea" || f === "plan" ? (
+                <textarea
+                  rows={4}
+                  value={form[f]}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      [f]: e.target.value,
+                    })
+                  }
+                  maxLength={f === "plan" ? 5000 : 3000}
+                />
+              ) : (
+                <input
+                  value={form[f]}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      [f]: e.target.value,
+                    })
+                  }
+                  placeholder={
+                    f === "link"
+                      ? "https://github.com/your-team/project"
+                      : f === "duration"
+                        ? "e.g. 2 weeks"
+                        : ""
+                  }
+                  maxLength={f === "link" ? 2000 : 100}
+                />
+              )}{" "}
+              {errors[f] && (
+                <small className="form-error" role="alert">
+                  {errors[f]}
+                </small>
+              )}
+            </label>
+          )),
+        )}
         <div className="publish-note">
-          <Users size={17} /> Businesses review every proposal and choose teams
-          themselves.
+          <Users size={17} />
+          {t("Businesses review every proposal and choose teams themselves.")}
         </div>
         <button className="button primary full" type="submit" disabled={saving}>
-          <Send size={17} /> Submit Proposal
+          <Send size={17} />
+          {t("Submit Proposal")}
         </button>
       </form>
     </section>
   );
 }
 export function Detail({ id }) {
+  const { t, locale } = useLocale();
   const { db, ready, role } = useStore();
   const [showProposal, setShowProposal] = useState(false);
   const challenge = db.challenges.find((c) => c.id === id);
@@ -126,10 +143,12 @@ export function Detail({ id }) {
   if (!challenge)
     return (
       <div className="empty-state">
-        <h2>Challenge not found</h2>
-        <p>This challenge may belong to a different local browser demo.</p>
+        <h2>{t("Challenge not found")}</h2>
+        <p>
+          {t("This challenge may belong to a different local browser demo.")}
+        </p>
         <Link className="button primary" href="/challenges">
-          Explore challenges
+          {t("Explore challenges")}
         </Link>
       </div>
     );
@@ -138,9 +157,9 @@ export function Detail({ id }) {
       <Editor existing={challenge} />
     ) : (
       <div className="empty-state">
-        <h2>This challenge is still a draft.</h2>
+        <h2>{t("This challenge is still a draft.")}</h2>
         <Link href="/challenges" className="button primary">
-          Explore published challenges
+          {t("Explore published challenges")}
         </Link>
       </div>
     );
@@ -150,12 +169,14 @@ export function Detail({ id }) {
   return (
     <>
       <PageHeader
-        title="Challenge"
-        subtitle="A real-world problem. An opportunity to make a difference."
+        title={t("Challenge")}
+        subtitle={t(
+          "A real-world problem. An opportunity to make a difference.",
+        )}
         action={
           <Link
             href="/challenges"
-            aria-label="Back to challenges"
+            aria-label={t("Back to challenges")}
             className="icon-button"
           >
             <ArrowLeft size={21} />
@@ -168,82 +189,99 @@ export function Detail({ id }) {
             <BriefcaseBusiness size={22} />
           </div>
           <div>
-            <strong>{challenge.owner}</strong>
-            <small>{card.industry || "Open challenge"}</small>
+            <strong>{t(challenge.owner)}</strong>
+            <small>{t(card.industry || "Open challenge")}</small>
           </div>
           <span className="published-label">
-            <CheckCircle2 size={14} /> Published
+            <CheckCircle2 size={14} />
+            {t("Published")}
           </span>
         </div>
         <div className="detail-title">
           <Badge score={score.total} />
-          <h2>{card.title}</h2>
-          <p>{card.problem}</p>
+          <h2>{t(card.title)}</h2>
+          <p>{t(card.problem)}</p>
         </div>
         <div className="detail-meta">
           <span>
             <Users size={16} />
-            {proposals.length} teams applied
+            {t(proposals.length)}
+            {t("teams applied")}
           </span>
           <span>
             <Clock3 size={16} />
-            {new Date(challenge.createdAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
+            {t(
+              new Date(challenge.createdAt).toLocaleDateString(
+                locale === "kk" ? "kk-KZ" : locale === "ru" ? "ru-RU" : "en-US",
+                {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                },
+              ),
+            )}
           </span>
         </div>
-        {challenge.contentReview && (
-          <QualityReview review={challenge.contentReview} />
+        {t(
+          challenge.contentReview && (
+            <QualityReview review={challenge.contentReview} />
+          ),
         )}
-        {role === "Student" ? (
-          <button
-            className="button primary full"
-            onClick={() => setShowProposal(true)}
-          >
-            <Send size={17} /> Submit Proposal
-          </button>
-        ) : (
-          <Link
-            className="button outline full"
-            href={"/applications?challenge=" + id}
-          >
-            <Users size={17} /> Review {proposals.length} proposals{" "}
-            <ArrowUpRight size={17} />
-          </Link>
+        {t(
+          role === "Student" ? (
+            <button
+              className="button primary full"
+              onClick={() => setShowProposal(true)}
+            >
+              <Send size={17} /> Submit Proposal
+            </button>
+          ) : (
+            <Link
+              className="button outline full"
+              href={"/applications?challenge=" + id}
+            >
+              <Users size={17} /> Review {proposals.length} proposals{" "}
+              <ArrowUpRight size={17} />
+            </Link>
+          ),
         )}
-        {showProposal && role === "Student" && (
-          <ProposalForm
-            challenge={challenge}
-            onClose={() => setShowProposal(false)}
-          />
+        {t(
+          showProposal && role === "Student" && (
+            <ProposalForm
+              challenge={challenge}
+              onClose={() => setShowProposal(false)}
+            />
+          ),
         )}
         <div className="detail-fields">
-          {fields
-            .filter((f) => !["title", "industry", "problem"].includes(f))
-            .map((f) => (
-              <section key={f}>
-                <h3>{fieldLabels[f]}</h3>
-                <p className={card[f] ? "" : "missing-text"}>
-                  {card[f] ||
-                    "Not provided yet — clarify this with the business."}
-                </p>
-              </section>
-            ))}
+          {t(
+            fields
+              .filter((f) => !["title", "industry", "problem"].includes(f))
+              .map((f) => (
+                <section key={f}>
+                  <h3>{fieldLabels[f]}</h3>
+                  <p className={card[f] ? "" : "missing-text"}>
+                    {card[f] ||
+                      "Not provided yet — clarify this with the business."}
+                  </p>
+                </section>
+              )),
+          )}
         </div>
         <div className="decision-note">
           <CheckCircle2 size={21} />
           <div>
-            <strong>People make the final decision.</strong>
+            <strong>{t("People make the final decision.")}</strong>
             <p>
-              AI helps prepare the challenge. The business reviews proposals and
-              manually selects its collaborators.
+              {t(
+                "AI helps prepare the challenge. The business reviews proposals and manually selects its collaborators.",
+              )}
             </p>
           </div>
         </div>
         <Link href="/challenges" className="text-link">
-          Explore more challenges <ExternalLink size={14} />
+          {t("Explore more challenges")}
+          <ExternalLink size={14} />
         </Link>
       </div>
       <SidePanel>
