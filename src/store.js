@@ -1,10 +1,11 @@
+import { tr } from './i18n.js';
 import { tasks as initialTasks } from './data.js';
 import { scoreTask, hasContent } from './scoring.js';
 
 export const BUSINESS_ID = 'business-qadam';
 export const TEAM_ID = 'chupapi';
 export const categories = ['Все темы', 'Веб-разработка', 'Данные и AI', 'Дизайн', 'Социальные проекты'];
-export const statusLabel = status => ({ pending: 'На рассмотрении', selected: 'Команда выбрана', rejected: 'Отклонено' })[status] || 'На рассмотрении';
+export const statusLabel = status => tr(({ pending: 'На рассмотрении', selected: 'Команда выбрана', rejected: 'Отклонено' })[status] || 'На рассмотрении');
 export function read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
 export function write(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); return true; }
@@ -50,13 +51,24 @@ function makeInitial() {
 const stored = read('alem.workspace.v2', null);
 export const db = stored?.version === 2 && Array.isArray(stored.tasks) && Array.isArray(stored.proposals) && Array.isArray(stored.teams) && stored.business && Array.isArray(stored.saved) ? stored : makeInitial();
 export const save = () => write('alem.workspace.v2', db);
-export const publishedTasks = () => db.tasks.filter(t => t.published);
-export const ownedTasks = () => db.tasks.filter(t => t.ownerId === BUSINESS_ID);
+// Retire legacy presence-only scores without deleting any tasks or replies.
+for (const task of db.tasks) task.score = scoreTask(task);
+save();
+export const publishedTasks = () => db.tasks.filter(t => t.published && !t.deletedAt);
+export const ownedTasks = () => db.tasks.filter(t => t.ownerId === BUSINESS_ID && !t.deletedAt);
 export const myProposals = () => db.proposals.filter(p => p.teamId === TEAM_ID);
 export const incoming = () => db.proposals.filter(p => ownedTasks().some(t => t.id === p.taskId));
 export const teamProfile = () => db.teams.find(t => t.id === TEAM_ID);
 export const getTask = id => db.tasks.find(t => t.id === id);
 export const teamPoints = id => db.proposals.filter(p => p.teamId === id && p.milestone?.status === 'confirmed').length * 10;
+export function deleteTask(id) {
+  const task = ownedTasks().find(t => t.id === id);
+  if (!task) return false;
+  // Keep the completed work and earned points in proposal history.
+  task.deletedAt = new Date().toISOString(); task.published = false;
+  db.saved = db.saved.filter(savedId => savedId !== id);
+  save(); return true;
+}
 export function decideProposal(id, status) {
   const p = incoming().find(p => p.id === id);
   if (!p || !['selected', 'rejected', 'pending'].includes(status) || p.milestone) return false;

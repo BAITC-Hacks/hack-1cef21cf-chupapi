@@ -1,6 +1,7 @@
 import { fields, hasContent } from './scoring.js';
+import { tr, getLocale } from './i18n.js';
 
-// Contract for a future server-side AI provider. No API key belongs in the client.
+// Shared validation and local fallback. The actual provider is in server/ai.js.
 export const SYSTEM_PROMPT = `Ты помогаешь бизнесу описать практическую задачу для студентов.
 Вход: JSON {description: string, fields: object}. Найди недостающие сведения.
 Верни JSON {questions: [{key: string, question: string}]}: минимум три уместных вопроса.
@@ -10,19 +11,22 @@ export const SYSTEM_PROMPT = `Ты помогаешь бизнесу описа�
 
 export function validateResponse(value) {
   const data = typeof value === 'string' ? JSON.parse(value) : value;
-  if (!data || !Array.isArray(data.questions) || data.questions.length < 3 || data.questions.length > 9) throw new Error('Некорректный список вопросов');
+  if (!data || !Array.isArray(data.questions) || data.questions.length < 3 || data.questions.length > 6) throw new Error('Некорректный список вопросов');
   const keys = new Set();
+  const questions = new Set();
   for (const item of data.questions) {
     if (!item || !fields.some(f => f.key === item.key) || keys.has(item.key) || typeof item.question !== 'string' || item.question.trim().length < 10 || item.question.length > 400) throw new Error('Некорректный уточняющий вопрос');
-    keys.add(item.key);
+    const normalized = item.question.trim().toLowerCase();
+    if (questions.has(normalized)) throw new Error('Повторяющийся вопрос');
+    keys.add(item.key); questions.add(normalized);
   }
   return { questions: data.questions.map(q => ({ key: q.key, question: q.question.trim() })) };
 }
 
-export function localQuestions(task) {
+export function localQuestions(task, locale = getLocale(), includeAll = false) {
   const text = `${task.description || ''} ${task.context || ''}`.toLowerCase();
-  const aboutLeads = /заяв|клиент|менеджер/.test(text);
-  const aboutSales = /продаж|коф|спрос|списан/.test(text);
+  const aboutLeads = /заяв|клиент|менеджер|өтінім|өтініш/.test(text);
+  const aboutSales = /продаж|коф|спрос|списан|сатылым|сату|сұраныс/.test(text);
   const questions = {
     context: aboutLeads ? 'Как сейчас поступают и обрабатываются заявки? На каком этапе возникает проблема?' : 'Как вы решаете эту задачу сейчас и что именно не устраивает?',
     users: 'Кто будет пользоваться решением и какие действия им нужно выполнять?',
@@ -35,7 +39,7 @@ export function localQuestions(task) {
   };
   const missing = Object.keys(questions).filter(key => !hasContent(task[key]));
   for (const key of Object.keys(questions)) { if (missing.length >= 3) break; if (!missing.includes(key)) missing.push(key); }
-  return { questions: missing.map(key => ({ key, question: questions[key] })) };
+  return { questions: (includeAll ? Object.keys(questions) : missing.slice(0, 6)).map(key => ({ key, question: tr(questions[key], {}, locale) })) };
 }
 
 // A deterministic local fallback permitted by the brief. Never fabricates answers.

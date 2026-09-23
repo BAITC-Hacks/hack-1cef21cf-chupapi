@@ -1,4 +1,5 @@
 const paths = {
+  trash: '<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   back: '<path d="M19 12H5m5-5-5 5 5 5"/>',
   edit: '<path d="m16 3 5 5-12 12-6 1 1-6L16 3Z"/><path d="m13 6 5 5"/>',
